@@ -1,6 +1,7 @@
 import {
   Diagnostic,
   DiagnosticChangeEvent,
+  DiagnosticSeverity,
   Disposable,
   TextEditor,
   TextEditorDecorationType,
@@ -94,14 +95,12 @@ export class CustomErrorColors implements Disposable {
           decorations[this.config.customColors[e.source + e.code.toString()].color].issues.push(e)
         } else if (e.source && this.config.customColors[e.source + "*"]) {
           decorations[this.config.customColors[e.source + "*"].color].issues.push(e)
-        } else if (e.severity === 1) {
+        } else if (e.severity === DiagnosticSeverity.Warning) {
           unhandledWarnings.push(e)
-        } else {
+        } else if (e.severity === DiagnosticSeverity.Error) {
           unhandledErrors.push(e)
         }
       })
-
-      console.log('here')
 
       for (const color in decorations) {
         editor.setDecorations(
