@@ -90,7 +90,6 @@ export class CustomErrorColors implements Disposable {
         }
       }
       issues.forEach((e) => {
-        console.log(JSON.stringify(e))
         if (e.source && e.code && this.config.customColors[e.source + e.code.toString()]) {
           decorations[this.config.customColors[e.source + e.code.toString()].color].issues.push(e)
         } else if (e.source && this.config.customColors[e.source + "*"]) {
