@@ -9,10 +9,13 @@ import {
 import { CustomErrorColors } from './CustomErrorColors'
 
 export function activate(context: ExtensionContext) {
-	const settings = workspace.getConfiguration('customerrorcolors')
-	console.log('activated')
+  const settingsName = 'custom-error-colors'
+	const settings = workspace.getConfiguration(settingsName)
 
-  const errorColors = new CustomErrorColors()
+  console.log('activated')
+  console.log(JSON.stringify(settings))
+
+  const errorColors = new CustomErrorColors(settings)
 
   context.subscriptions.push(window.onDidChangeActiveTextEditor((editor: TextEditor | undefined) => {
     if (!!editor) {
@@ -21,9 +24,9 @@ export function activate(context: ExtensionContext) {
   }))
 
   context.subscriptions.push(workspace.onDidChangeConfiguration((event: ConfigurationChangeEvent) => {
-    if (event.affectsConfiguration('customerrorcolors')) {
-      const _settings = workspace.getConfiguration('customerrorcolors')
-        // TODO
+    if (event.affectsConfiguration(settingsName)) {
+      const newSettings = workspace.getConfiguration(settingsName)
+      // errorColors.updateSettings(newSettings)
     }
   }))
 

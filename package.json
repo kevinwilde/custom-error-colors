@@ -1,6 +1,6 @@
 {
 	"name": "custom-error-colors",
-	"displayName": "custom-error-colors",
+	"displayName": "Custom Error Colors",
 	"description": "",
 	"version": "0.0.1",
 	"engines": {
@@ -13,7 +13,45 @@
 		"*"
 	],
 	"main": "./out/extension.js",
-	"contributes": {},
+	"contributes": {
+		"configuration": {
+		  	"title": "Custom Error Colors",
+		  	"properties": {
+				"custom-error-colors.defaultColor.error": {
+					"default": "red",
+					"description": "Controls default color for errors",
+					"type": "string"
+				},
+				"custom-error-colors.defaultColor.warning": {
+					"default": "green",
+					"description": "Controls default color for warnings",
+					"type": "string"
+				},
+				"custom-error-colors.customColors": {
+					"default": [],
+					"description": "An array of custom colors for errors",
+					"type": "array",
+					"items": {
+						"type": "object",
+						"properties": {
+							"source": {
+								"type": "string",
+								"description": "Error source to match"
+							},
+							"errorCode": {
+								"type": "string",
+								"description": "Error code to match"
+							},
+							"color": {
+								"type": "string",
+								"description": "Color to apply for this error code"
+							}
+						}
+				}
+			}
+		  }
+		}
+	},
 	"scripts": {
 		"vscode:prepublish": "yarn run compile",
 		"compile": "tsc -p ./",

@@ -11,16 +11,42 @@ import {
 
 export class CustomErrorColors implements Disposable {
   private disposables: Disposable[]
-  private greenDecorationType: TextEditorDecorationType
-  private redDecorationType: TextEditorDecorationType
+  private config: {
+    defaultErrorDecoration: TextEditorDecorationType
+    defaultWarningDecoration: TextEditorDecorationType
+    customColors: {
+      [errCode: string]: {
+        color: string
+        decoration: TextEditorDecorationType
+      }
+    }
+  }
 
-  constructor() {
+  constructor(settings: any) {
     const rules = {
       borderWidth: '0 0 2px 0',
       borderStyle: 'dotted',
     }
-    this.greenDecorationType = window.createTextEditorDecorationType({...rules, borderColor: 'green'})
-    this.redDecorationType = window.createTextEditorDecorationType({...rules, borderColor: 'red'})
+    this.config = {
+      defaultErrorDecoration: window.createTextEditorDecorationType({
+        ...rules,
+        borderColor: settings.defaultColor.error
+      }),
+      defaultWarningDecoration: window.createTextEditorDecorationType({
+        ...rules,
+        borderColor: settings.defaultColor.warning
+      }),
+      customColors: {}
+    }
+    for (const s of settings.customColors) {
+      this.config.customColors[s.source + s.errorCode] = {
+        color: s.color,
+        decoration: window.createTextEditorDecorationType({
+          ...rules,
+          borderColor: s.color
+        })
+      }
+    }
 
     this.disposables = [languages.onDidChangeDiagnostics((e) => this.diagnosticChangedListener(e))]
   }
@@ -48,25 +74,49 @@ export class CustomErrorColors implements Disposable {
     const editor = editors.length ? editors[0] : null
 
     if (editor) {
-      const greenIssues: Diagnostic[] = []
-      const redIssues: Diagnostic[] = []
+      const unhandledWarnings: Diagnostic[] = []
+      const unhandledErrors: Diagnostic[] = []
+      const decorations: {
+        [color: string]: {
+          decoration: any
+          issues: Diagnostic[]
+        }
+      } = {}
+      for (const errSrcCode in this.config.customColors) {
+        decorations[this.config.customColors[errSrcCode].color] = {
+          decoration: this.config.customColors[errSrcCode].decoration,
+          issues: []
+        }
+      }
       issues.forEach((e) => {
-        if (e.message.indexOf("possibly 'undefined'") >= 0) {
-          greenIssues.push(e)
+        console.log(JSON.stringify(e))
+        if (e.source && e.code && this.config.customColors[e.source + e.code.toString()]) {
+          decorations[this.config.customColors[e.source + e.code.toString()].color].issues.push(e)
+        } else if (e.source && this.config.customColors[e.source + "*"]) {
+          decorations[this.config.customColors[e.source + "*"].color].issues.push(e)
+        } else if (e.severity === 1) {
+          unhandledWarnings.push(e)
         } else {
-          redIssues.push(e)
+          unhandledErrors.push(e)
         }
       })
 
-      console.log('here', greenIssues.length, redIssues.length)
+      console.log('here')
+
+      for (const color in decorations) {
+        editor.setDecorations(
+          decorations[color].decoration,
+          decorations[color].issues.map(e => e.range)
+        )
+      }
 
       editor.setDecorations(
-        this.greenDecorationType,
-        greenIssues.map((e) => e.range)
+        this.config.defaultWarningDecoration,
+        unhandledWarnings.map((e) => e.range)
       )
       editor.setDecorations(
-        this.redDecorationType,
-        redIssues.map((e) => e.range)
+        this.config.defaultErrorDecoration,
+        unhandledErrors.map((e) => e.range)
       )
     }
   }
