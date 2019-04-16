@@ -16,17 +16,19 @@ export class CustomErrorColors implements Disposable {
     defaultErrorDecoration: TextEditorDecorationType
     defaultWarningDecoration: TextEditorDecorationType
     customColors: {
-      [errCode: string]: {
+      [source: string]: {
+        code?: string
+        regex?: RegExp
         color: string
         decoration: TextEditorDecorationType
-      }
+      }[]
     }
   }
 
   constructor(settings: any) {
     const rules = {
       borderWidth: '0 0 2px 0',
-      borderStyle: 'dotted',
+      borderStyle: 'solid',
     }
     this.config = {
       defaultErrorDecoration: window.createTextEditorDecorationType({
@@ -40,13 +42,18 @@ export class CustomErrorColors implements Disposable {
       customColors: {}
     }
     for (const s of settings.customColors) {
-      this.config.customColors[s.source + s.errorCode] = {
+      if (!this.config.customColors[s.source]) {
+        this.config.customColors[s.source] = []
+      }
+      this.config.customColors[s.source].push({
         color: s.color,
         decoration: window.createTextEditorDecorationType({
           ...rules,
           borderColor: s.color
-        })
-      }
+        }),
+        ...s.errorCode && { code: s.errorCode.toString() },
+        ...s.regex && { regex: new RegExp(s.regex) },
+      })
     }
 
     this.disposables = [languages.onDidChangeDiagnostics((e) => this.diagnosticChangedListener(e))]
@@ -83,21 +90,33 @@ export class CustomErrorColors implements Disposable {
           issues: Diagnostic[]
         }
       } = {}
-      for (const errSrcCode in this.config.customColors) {
-        decorations[this.config.customColors[errSrcCode].color] = {
-          decoration: this.config.customColors[errSrcCode].decoration,
-          issues: []
+      for (const source in this.config.customColors) {
+        for (const item of this.config.customColors[source]) {
+          decorations[item.color] = {
+            decoration: item.decoration,
+            issues: []
+          }
         }
       }
       issues.forEach((e) => {
-        if (e.source && e.code && this.config.customColors[e.source + e.code.toString()]) {
-          decorations[this.config.customColors[e.source + e.code.toString()].color].issues.push(e)
-        } else if (e.source && this.config.customColors[e.source + "*"]) {
-          decorations[this.config.customColors[e.source + "*"].color].issues.push(e)
-        } else if (e.severity === DiagnosticSeverity.Warning) {
-          unhandledWarnings.push(e)
-        } else if (e.severity === DiagnosticSeverity.Error) {
-          unhandledErrors.push(e)
+        let handled = false
+        if (e.source && this.config.customColors[e.source]) {
+          for (const item of this.config.customColors[e.source]) {
+            const regexMatches = item.regex && e.message.match(item.regex)
+            const codeMatches = item.code && e.code && e.code.toString() === item.code
+            if (regexMatches || codeMatches) {
+              decorations[item.color].issues.push(e)
+              handled = true
+            }
+          }
+        }
+
+        if (!handled) {
+          if (e.severity === DiagnosticSeverity.Warning) {
+            unhandledWarnings.push(e)
+          } else if (e.severity === DiagnosticSeverity.Error) {
+            unhandledErrors.push(e)
+          }
         }
       })
 

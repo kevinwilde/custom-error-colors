@@ -3,8 +3,13 @@
 	"displayName": "Custom Error Colors",
 	"description": "",
 	"version": "0.0.1",
+	"publisher": "kevinwilde",
 	"engines": {
 		"vscode": "^1.33.0"
+	},
+	"repository": {
+	  "type": "git",
+	  "url": "https://github.com/kevinwilde/custom-error-colors.git"
 	},
 	"categories": [
 		"Other"
@@ -37,6 +42,10 @@
 							"source": {
 								"type": "string",
 								"description": "Error source to match"
+							},
+							"regex": {
+								"type": "string",
+								"description": "Error message to match"
 							},
 							"errorCode": {
 								"type": "string",
