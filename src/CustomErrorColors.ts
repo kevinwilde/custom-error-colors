@@ -101,7 +101,7 @@ export class CustomErrorColors implements Disposable {
   private updateDiagnosticList(uri: Uri): void {
     const issues = languages.getDiagnostics(uri)
 
-    const editors = window.visibleTextEditors.filter(({ document }) => document.uri === uri)
+    const editors = window.visibleTextEditors.filter(({ document }) => document.uri.fsPath === uri.fsPath)
     const editor = editors.length ? editors[0] : null
 
     if (editor) {
