@@ -12,7 +12,7 @@ export function activate(context: ExtensionContext) {
   const settingsName = 'custom-error-colors'
 	const settings = workspace.getConfiguration(settingsName)
 
-  const errorColors = new CustomErrorColors(settings)
+  const errorColors = new CustomErrorColors(settings as any)
 
   context.subscriptions.push(window.onDidChangeActiveTextEditor((editor: TextEditor | undefined) => {
     if (!!editor) {
@@ -23,7 +23,7 @@ export function activate(context: ExtensionContext) {
   context.subscriptions.push(workspace.onDidChangeConfiguration((event: ConfigurationChangeEvent) => {
     if (event.affectsConfiguration(settingsName)) {
       const newSettings = workspace.getConfiguration(settingsName)
-      // errorColors.updateSettings(newSettings)
+      errorColors.updateSettings(newSettings as any)
     }
   }))
 

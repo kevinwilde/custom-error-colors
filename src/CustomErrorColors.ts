@@ -10,27 +10,51 @@ import {
   window,
 } from 'vscode'
 
+interface Settings {
+  defaultColor: {
+    error: string
+    warning: string
+  }
+  customColors: {
+    source: string
+    color: string
+    errorCode?: string | number
+    regex?: string
+  }[]
+}
+
+interface Config {
+  defaultErrorDecoration: TextEditorDecorationType
+  defaultWarningDecoration: TextEditorDecorationType
+  customColors: {
+    [source: string]: {
+      code?: string
+      regex?: RegExp
+      color: string
+      decoration: TextEditorDecorationType
+    }[]
+  }
+}
+
 export class CustomErrorColors implements Disposable {
   private disposables: Disposable[]
-  private config: {
-    defaultErrorDecoration: TextEditorDecorationType
-    defaultWarningDecoration: TextEditorDecorationType
-    customColors: {
-      [source: string]: {
-        code?: string
-        regex?: RegExp
-        color: string
-        decoration: TextEditorDecorationType
-      }[]
-    }
+  private config: Config
+
+  constructor(settings: Settings) {
+    this.config = this.createConfig(settings)
+    this.disposables = [languages.onDidChangeDiagnostics((e) => this.diagnosticChangedListener(e))]
   }
 
-  constructor(settings: any) {
+  public updateSettings(settings: Settings) {
+    this.config = this.createConfig(settings)
+  }
+
+  private createConfig(settings: Settings): Config {
     const rules = {
       borderWidth: '0 0 2px 0',
       borderStyle: 'solid',
     }
-    this.config = {
+    const config: Config = {
       defaultErrorDecoration: window.createTextEditorDecorationType({
         ...rules,
         borderColor: settings.defaultColor.error
@@ -42,10 +66,10 @@ export class CustomErrorColors implements Disposable {
       customColors: {}
     }
     for (const s of settings.customColors) {
-      if (!this.config.customColors[s.source]) {
-        this.config.customColors[s.source] = []
+      if (!config.customColors[s.source]) {
+        config.customColors[s.source] = []
       }
-      this.config.customColors[s.source].push({
+      config.customColors[s.source].push({
         color: s.color,
         decoration: window.createTextEditorDecorationType({
           ...rules,
@@ -55,8 +79,7 @@ export class CustomErrorColors implements Disposable {
         ...s.regex && { regex: new RegExp(s.regex) },
       })
     }
-
-    this.disposables = [languages.onDidChangeDiagnostics((e) => this.diagnosticChangedListener(e))]
+    return config
   }
 
   public activeEditorChanged(editor: TextEditor): void {
